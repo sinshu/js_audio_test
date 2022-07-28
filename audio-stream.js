@@ -1,10 +1,21 @@
 export class AudioStream
 {
-    static node = null;
+    static latency = 0.2;
+    static sampleRate = 0;
+    static queueNeeded = false;
+
+    static #node = null;
 
     static async start()
     {
+        if (AudioStream.#node != null)
+        {
+            return;
+        }
+
         const ac = new AudioContext();
+
+        AudioStream.sampleRate = ac.sampleRate;
 
         await ac.audioWorklet.addModule("audio-stream-processor.js");
 
@@ -12,23 +23,32 @@ export class AudioStream
         {
             numberOfInputs: 0,
             numberOfOutputs: 1,
-            outputChannelCount: [2]
+            outputChannelCount: [2],
+            processorOptions: { bufferLength: Math.floor(AudioStream.sampleRate * AudioStream.latency) }
         };
 
-        AudioStream.node = new AudioWorkletNode(ac, "audio-stream-processor", options);
+        AudioStream.#node = new AudioWorkletNode(ac, "audio-stream-processor", options);
 
-        AudioStream.node.connect(ac.destination);
+        AudioStream.#node.port.onmessage = (e) =>
+        {
+            AudioStream.queueNeeded = e.data;
+        };
 
-        return ac.sampleRate;
+        AudioStream.#node.connect(ac.destination);
     }
 
-    static queue()
+    static enqueue(left, right)
     {
-        if (AudioStream.node == null)
+        if (AudioStream.#node == null)
         {
             throw new Error("The start method must be called before the queue method.");
         }
 
-        AudioStream.node.port.postMessage("ping");
+        if (left.length != right.length)
+        {
+            throw new Error("The left and right block must be the same length.");
+        }
+
+        AudioStream.#node.port.postMessage([left, right]);
     }
 }

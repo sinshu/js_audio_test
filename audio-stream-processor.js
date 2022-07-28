@@ -1,15 +1,20 @@
 class AudioStreamProcessor extends AudioWorkletProcessor
 {
-    constructor()
+    constructor(options)
     {
-        super();
+        super(options);
+
+        this.blockQueue = new Array();
+        this.currentBlock = null;
+        this.currentBlockRead = 0;
+
+        this.bufferLength = options.processorOptions.bufferLength;
+        this.queueNeeded = false;
 
         this.port.onmessage = (e) =>
         {
-            console.log(e.data);
+            this.blockQueue.push(e.data);
         };
-
-        this.phase = 0;
     }
 
     process(inputs, outputs, parameters)
@@ -24,19 +29,67 @@ class AudioStreamProcessor extends AudioWorkletProcessor
             throw new Error("The number of output channels must be two.");
         }
 
-        const left = outputs[0][0];
-        const right = outputs[0][1];
+        const outputLeft = outputs[0][0];
+        const outputRight = outputs[0][1];    
+        const outputLength = outputLeft.length;
 
-        for (var t = 0; t < left.length; t++)
+        var outputWrote = 0;
+
+        while (outputWrote < outputLength)
         {
-            left[t] = Math.random() - 0.5;
+            if (this.currentBlock == null)
+            {
+                if (this.blockQueue.length == 0)
+                {
+                    outputLeft.fill(0, outputWrote);
+                    outputRight.fill(0, outputWrote);
+                    break;
+                }
+
+                this.currentBlock = this.blockQueue.shift();
+                this.currentBlockRead = 0;
+            }
+
+            const blockLeft = this.currentBlock[0];
+            const blockRight = this.currentBlock[1];
+            const blockLength = blockLeft.length;
+
+            const srcRem = blockLength - this.currentBlockRead;
+            const dstRem = outputLength - outputWrote;
+            const rem = Math.min(srcRem, dstRem);
+
+            for (var t = 0; t < rem; t++)
+            {
+                outputLeft[outputWrote + t] = blockLeft[this.currentBlockRead + t];
+                outputRight[outputWrote + t] = blockRight[this.currentBlockRead + t];
+            }
+
+            this.currentBlockRead += rem;
+            outputWrote += rem;
+
+            if (this.currentBlockRead == blockLength)
+            {
+                this.currentBlock = null;
+                this.currentBlockRead = 0;
+            }
         }
 
-        for (var t = 0; t < right.length; t++)
+        var margin = 0;
+        if (this.currentBlock != null)
         {
-            right[t] = 0.9 * Math.sin(this.phase);
-            this.phase += 2 * Math.PI * 500 / 48000;
+            margin += this.currentBlock[0].length - this.currentBlockRead;
         }
+        this.blockQueue.forEach(block =>
+        {
+            margin += block[0].length;
+        });
+
+        const newQueueNeeded = margin < this.bufferLength;
+        if (this.queueNeeded != newQueueNeeded)
+        {
+            this.port.postMessage(newQueueNeeded);
+        }
+        this.queueNeeded = newQueueNeeded;
 
         return true;
     }
