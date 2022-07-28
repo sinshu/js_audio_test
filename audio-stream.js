@@ -24,7 +24,7 @@ export class AudioStream
             numberOfInputs: 0,
             numberOfOutputs: 1,
             outputChannelCount: [2],
-            processorOptions: { bufferLength: Math.floor(AudioStream.sampleRate * AudioStream.latency) }
+            processorOptions: { bufferLength: AudioStream.sampleRate * AudioStream.latency }
         };
 
         AudioStream.#node = new AudioWorkletNode(ac, "audio-stream-processor", options);
