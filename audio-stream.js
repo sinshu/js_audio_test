@@ -1,19 +1,34 @@
-export async function startAudioStream()
+export class AudioStream
 {
-    const audioContext = new AudioContext();
+    static node = null;
 
-    await audioContext.audioWorklet.addModule("audio-stream-processor.js");
-
-    const options =
+    static async start()
     {
-        numberOfInputs: 0,
-        numberOfOutputs: 1,
-        outputChannelCount: [2]
-    };
+        const ac = new AudioContext();
 
-    const audioStreamNode = new AudioWorkletNode(audioContext, "audio-stream-processor", options);
+        await ac.audioWorklet.addModule("audio-stream-processor.js");
 
-    audioStreamNode.connect(audioContext.destination);
+        const options =
+        {
+            numberOfInputs: 0,
+            numberOfOutputs: 1,
+            outputChannelCount: [2]
+        };
 
-    return audioContext.sampleRate;
+        AudioStream.node = new AudioWorkletNode(ac, "audio-stream-processor", options);
+
+        AudioStream.node.connect(ac.destination);
+
+        return ac.sampleRate;
+    }
+
+    static queue()
+    {
+        if (AudioStream.node == null)
+        {
+            throw new Error("The start method must be called before the queue method.");
+        }
+
+        AudioStream.node.port.postMessage("ping");
+    }
 }
