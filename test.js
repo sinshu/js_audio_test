@@ -1,4 +1,4 @@
-import { AudioStream } from "./audio-stream.js";
+import { AudioStream_start, AudioStream_enqueue, AudioStream_queueNeeded } from "./audio-stream.js";
 
 var phase = 0;
 
@@ -11,14 +11,14 @@ window.addEventListener("load", function()
     {
         btn1.disabled = true;
 
-        await AudioStream.start();
+        await AudioStream_start();
 
         setInterval(() =>
         {
             const left = new Float32Array(4096);
             const right = new Float32Array(4096);
 
-            if (AudioStream.queueNeeded)
+            if (AudioStream_queueNeeded())
             {
                 for (var t = 0; t < left.length; t++)
                 {
@@ -27,7 +27,7 @@ window.addEventListener("load", function()
                     phase += 2 * Math.PI * 440 / 48000;
                 }
 
-                AudioStream.enqueue(left, right);
+                AudioStream_enqueue(left, right);
             }
         }, 10);
     });

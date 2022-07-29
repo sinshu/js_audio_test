@@ -1,4 +1,24 @@
-export class AudioStream
+export async function AudioStream_start()
+{
+    await AudioStream.start();
+}
+
+export function AudioStream_enqueue(left, right)
+{
+    AudioStream.enqueue(left, right);
+}
+
+export function AudioStream_queueNeeded()
+{
+    return AudioStream.queueNeeded;
+}
+
+export function AudioStream_getSampleRate()
+{
+    return AudioStream.sampleRate;
+}
+
+class AudioStream
 {
     static sampleRate = 0;
     static queueNeeded = false;
