@@ -1,6 +1,5 @@
 export class AudioStream
 {
-    static latency = 0.2;
     static sampleRate = 0;
     static queueNeeded = false;
 
@@ -24,7 +23,12 @@ export class AudioStream
             numberOfInputs: 0,
             numberOfOutputs: 1,
             outputChannelCount: [2],
-            processorOptions: { bufferLength: AudioStream.sampleRate * AudioStream.latency }
+
+            processorOptions:
+            {
+                bufferLength: 0.3 * AudioStream.sampleRate,
+                maxBufferLength: 3 * AudioStream.sampleRate
+            }
         };
 
         AudioStream.#node = new AudioWorkletNode(ac, "audio-stream-processor", options);

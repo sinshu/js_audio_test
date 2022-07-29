@@ -9,10 +9,22 @@ class AudioStreamProcessor extends AudioWorkletProcessor
         this.currentBlockRead = 0;
 
         this.bufferLength = options.processorOptions.bufferLength;
+        this.maxBufferLength = options.processorOptions.maxBufferLength;
         this.queueNeeded = false;
 
         this.port.onmessage = (e) =>
         {
+            var margin = 0;
+            this.blockQueue.forEach(block =>
+            {
+                margin += block[0].length;
+            });
+
+            if (margin > this.maxBufferLength)
+            {
+                throw new Error("Too many blocks were queued.");
+            }
+
             this.blockQueue.push(e.data);
         };
     }
@@ -21,7 +33,7 @@ class AudioStreamProcessor extends AudioWorkletProcessor
     {
         if (outputs.length != 1)
         {
-            throw new Error("The number of outputs must be one");
+            throw new Error("The number of outputs must be one.");
         }
 
         if (outputs[0].length != 2)

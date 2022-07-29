@@ -9,15 +9,17 @@ window.addEventListener("load", function()
 
     btn1.addEventListener("click", async function()
     {
+        btn1.disabled = true;
+
         await AudioStream.start();
 
         setInterval(() =>
         {
+            const left = new Float32Array(4096);
+            const right = new Float32Array(4096);
+
             if (AudioStream.queueNeeded)
             {
-                const left = new Float32Array(2048);
-                const right = new Float32Array(2048);
-
                 for (var t = 0; t < left.length; t++)
                 {
                     left[t] = 0.1 * (Math.random() - 0.5);
@@ -28,8 +30,6 @@ window.addEventListener("load", function()
                 AudioStream.enqueue(left, right);
             }
         }, 10);
-
-        btn1.disabled = true;
     });
 
     btn2.addEventListener("click", async function()
