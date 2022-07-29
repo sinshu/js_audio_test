@@ -100,8 +100,8 @@ class AudioStreamProcessor extends AudioWorkletProcessor
         if (this.queueNeeded != newQueueNeeded)
         {
             this.port.postMessage(newQueueNeeded);
+            this.queueNeeded = newQueueNeeded;
         }
-        this.queueNeeded = newQueueNeeded;
 
         return true;
     }
